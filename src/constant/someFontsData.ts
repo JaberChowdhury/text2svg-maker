@@ -1,11 +1,4 @@
-import defaultFont from "@/assets/default.ttf";
-
 export default [
-  {
-    key: "jwidbkwu-284c-4701-ab62-haiqyendkfuw",
-    family: "Default font",
-    regular: defaultFont,
-  },
   {
     key: "f108a4be-284c-4701-ab62-95c4ea88127f",
     family: "ABeeZee",

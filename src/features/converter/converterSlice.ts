@@ -1,12 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 import someFontsData from "@/constant/someFontsData";
+import { type Font } from "@/features/fonts/fontsSlice";
 
 type Initialstate = {
-  selectedFont: {
-    key: string;
-    family: string;
-    regular: string;
-  };
+  selectedFont: Font;
   variant: string;
   text: string;
   size: number;
@@ -48,7 +45,6 @@ const converterSlice = createSlice({
   initialState,
   reducers: {
     changeFont: (state, action) => {
-      console.log(action.payload);
       state.selectedFont = action.payload.selectedFont;
     },
   },

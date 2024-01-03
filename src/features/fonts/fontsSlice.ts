@@ -1,95 +1,81 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import axios from "axios";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios, { AxiosResponse } from "axios";
 import someFontsData from "@/constant/someFontsData";
-import { useId } from "react";  
 
-
-type Font = {
+export type Font = {
+  key?: string;
   family: string;
-  variants: string[];
-  subset: string[];
-  version: string[];
-  lastModified: string;
-  files: {
+  variants?: string[];
+  subset?: string[];
+  version?: string[];
+  lastModified?: string;
+  files?: {
     regular: string;
     italic?: string;
   };
-  category: string;
-  kind: string;
-  menu: string;
+  regular?: string;
+  category?: string;
+  kind?: string;
+  menu?: string;
 };
 
-export type fontType = {
-  key: string;
-  family: string;
-  regular: string;
-};
-
-type InitialState = {
-  fonts: fontType[];
+type Initialstate = {
+  fonts: Font[];
   isLoading: boolean;
   error: null | string;
 };
 
-// Define the type for the payload of the addFonts action
-type AddFontsPayload = {
-  fonts: fontType[];
+type StateType = {
+  fonts: Initialstate;
 };
 
-// Define the type for the async thunk
-type FetchFontsResponse = {
+type AxiosReturn = {
   items: Font[];
-  // Add other properties based on the response from the API
 };
 
-type stateType = {
-  fonts: InitialState;
-};
-
-const fetchFonts = createAsyncThunk("fonts/fetchFonts", async () => {
-  const response = await axios.get<FetchFontsResponse>(
+// Fetch fonts
+const getAllFonts = async (): Promise<AxiosResponse<AxiosReturn>> => {
+  return await axios.get<AxiosReturn>(
     "https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyCXc7cYhaQTGorf1XHwLJsNqCGMIUztTcU",
   );
-  return response.data.items;
+};
+
+const fetchFonts = createAsyncThunk("font/fetchFonts", async () => {
+  const data = await getAllFonts();
+  return data;
 });
 
-const fontsSlice = createSlice({
-  name: "fonts",
-  initialState: {
-    fonts: someFontsData,
-    isLoading: false,
-    error: null,
-  } as InitialState,
-  reducers: {
-    addFonts: (state, action: PayloadAction<AddFontsPayload>) => {
-      state.fonts.push(...action.payload.fonts);
-    },
-  },
+const initialState = {
+  fonts: someFontsData,
+  isLoading: false,
+  error: null,
+} as Initialstate;
+
+const fontSlice = createSlice({
+  name: "font",
+  initialState,
+  reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(fetchFonts.pending, (state) => {
-      state.isLoading = true;
-    });
-    builder.addCase(fetchFonts.fulfilled, (state, action) => {
-      state.isLoading = false;
-
-      // Iterate through fonts and push them into state.fonts
-      action.payload.slice(10).forEach((f) => {
-        state.fonts.push({
-          key: useId(),
-          family: f.family,
-          regular: f.files.regular,
-        });
+    builder
+      .addCase(fetchFonts.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchFonts.fulfilled, (state, action) => {
+        const fontsWithIds = action.payload.data.items.map((font) => ({
+          ...font,
+          key: crypto.randomUUID(),
+        }));
+        state.fonts = fontsWithIds;
+        state.isLoading = false;
+      })
+      .addCase(fetchFonts.rejected, (state, action) => {
+        state.error = action.error.message as string;
+        state.isLoading = false;
       });
-    });
-
-    builder.addCase(fetchFonts.rejected, (state, action) => {
-      state.isLoading = false;
-      state.error = action.error.message ?? "An error occurred";
-    });
   },
 });
 
-export default fontsSlice.reducer;
-export { fetchFonts };
-export const fontsSelector = (state: stateType) => state.fonts;
-export const { addFonts } = fontsSlice.actions;
+const fontsSelector = (state: StateType) => state.fonts; // Return state.font instead of just font
+
+export default fontSlice.reducer;
+export { fetchFonts, fontsSelector };
